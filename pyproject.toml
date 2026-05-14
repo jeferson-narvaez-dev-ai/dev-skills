@@ -16,3 +16,4 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/dev_skills"]
+include = ["src/dev_skills/data/**"]
