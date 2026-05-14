@@ -61,7 +61,50 @@ uvx dev-skills add skills --scope user
 uvx dev-skills add agents --scope user
 ```
 
-## 4. Additional commands
+## 4. Add skills to OpenCode
+
+OpenCode is a separate AI coding terminal. Use the `--tool opencode` flag to install into its config directories.
+
+```bash
+# User level — available in ALL projects (~/.config/opencode/)
+uvx dev-skills add --scope user --tool opencode
+
+# Project level — only in the current project (.opencode/)
+uvx dev-skills add --scope project --tool opencode
+
+# Skills only
+uvx dev-skills add skills --scope user --tool opencode
+
+# Agents only
+uvx dev-skills add agents --scope user --tool opencode
+```
+
+### OpenCode config template
+
+Copy the sample config and update the paths:
+
+```bash
+mkdir -p ~/.config/opencode
+cp opencode-setup/opencode.json.sample ~/.config/opencode/opencode.json
+```
+
+Then set `VAULT_FOLDER` and `PROJECTS_FOLDER` in your shell profile (`~/.zshrc` or `~/.bashrc`):
+
+```bash
+export VAULT_FOLDER="/path/to/your/obsidian-vault"
+export PROJECTS_FOLDER="/path/to/your/projects"
+```
+
+> **Note:** OpenCode already reads `~/.claude/skills/` as a fallback, so if you have Claude Code skills installed at the user level, OpenCode may pick them up automatically.
+
+### Uninstall from OpenCode
+
+```bash
+uvx dev-skills uninstall --scope user --tool opencode
+uvx dev-skills uninstall --scope project --tool opencode
+```
+
+## 5. Additional commands
 
 ### Update
 

@@ -31,8 +31,8 @@ Single source of truth for all path resolution across Obsidian skills. Every obs
 Every obsidian skill must execute this block before any file operation:
 
 ```bash
-VAULT="${VAULT_FOLDER:?'VAULT_FOLDER is not set — add it to ~/.claude/settings.json env section'}"
-PROJECTS="${PROJECTS_FOLDER:?'PROJECTS_FOLDER is not set — add it to ~/.claude/settings.json env section'}"
+VAULT="${VAULT_FOLDER:?'VAULT_FOLDER is not set — add it to ~/.claude/settings.json (Claude Code) or ~/.config/opencode/opencode.json (OpenCode) env section'}"
+PROJECTS="${PROJECTS_FOLDER:?'PROJECTS_FOLDER is not set — add it to ~/.claude/settings.json (Claude Code) or ~/.config/opencode/opencode.json (OpenCode) env section'}"
 ```
 
 ---

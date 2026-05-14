@@ -14,6 +14,12 @@ _scope_option = click.option(
     default=None,
     help="Install scope: user (~/.claude/) or project (.claude/).",
 )
+_tool_option = click.option(
+    "--tool",
+    type=click.Choice(["claude", "opencode"], case_sensitive=False),
+    default=None,
+    help="Target tool: claude (~/.claude/) or opencode (~/.config/opencode/).",
+)
 _force_option = click.option("--force", is_flag=True, help="Overwrite existing files without prompting.")
 _dry_run_option = click.option("--dry-run", is_flag=True, help="Show what would be done without making changes.")
 
@@ -44,14 +50,18 @@ def _require_config() -> tuple:
     return config, clone_path
 
 
-def _make_installer(config, clone_path: Path, *, dry_run: bool, scope: str | None) -> Installer:
+def _make_installer(config, clone_path: Path, *, dry_run: bool, scope: str | None, tool: str | None = None) -> Installer:
     """Create an Installer pre-configured from saved config + scope."""
     installer = Installer(dry_run=dry_run)
     installer.set_method(config.method)
     installer.set_clone_path(clone_path)
+    if tool is None:
+        installer.ask_tool()
+    else:
+        installer.set_tool(tool)
     if scope is None:
         scope = installer.ask_scope()
-    installer.set_scope(scope)
+    installer.set_scope(scope, installer._tool)
     return installer
 
 
@@ -108,12 +118,14 @@ def install(
 # ── add ──────────────────────────────────────────────────────
 @main.group(invoke_without_command=True)
 @_scope_option
+@_tool_option
 @_force_option
 @_dry_run_option
 @click.pass_context
 def add(
     ctx: click.Context,
     scope: str | None,
+    tool: str | None,
     force: bool,
     dry_run: bool,
 ) -> None:
@@ -124,12 +136,13 @@ def add(
     ctx.obj["config"] = config
     ctx.obj["clone_path"] = clone_path
     ctx.obj["scope"] = scope
+    ctx.obj["tool"] = tool
     ctx.obj["force"] = force
     ctx.obj["dry_run"] = dry_run
 
     # If no subcommand → install everything
     if ctx.invoked_subcommand is None:
-        installer = _make_installer(config, clone_path, dry_run=dry_run, scope=scope)
+        installer = _make_installer(config, clone_path, dry_run=dry_run, scope=scope, tool=tool)
         installer.show_summary()
         if not dry_run and not force:
             click.confirm("  Proceed?", abort=True)
@@ -142,23 +155,26 @@ def add(
 def _sub_opts(ctx: click.Context, scope: str | None, force: bool, dry_run: bool) -> tuple[Installer, Path, bool]:
     """Merge group-level and subcommand-level options, return (installer, source, force)."""
     scope = scope or ctx.obj["scope"]
+    tool = ctx.obj.get("tool")
     force = force or ctx.obj["force"]
     dry_run = dry_run or ctx.obj["dry_run"]
 
     config = ctx.obj["config"]
     clone_path = ctx.obj["clone_path"]
 
-    installer = _make_installer(config, clone_path, dry_run=dry_run, scope=scope)
+    installer = _make_installer(config, clone_path, dry_run=dry_run, scope=scope, tool=tool)
     return installer, clone_path, force
 
 
 @add.command()
 @_scope_option
+@_tool_option
 @_force_option
 @_dry_run_option
 @click.pass_context
-def skills(ctx: click.Context, scope: str | None, force: bool, dry_run: bool) -> None:
+def skills(ctx: click.Context, scope: str | None, tool: str | None, force: bool, dry_run: bool) -> None:
     """Add skills to a project."""
+    ctx.obj["tool"] = tool or ctx.obj.get("tool")
     installer, source, force = _sub_opts(ctx, scope, force, dry_run)
     if installer._method == "symlink":
         installer.install_skills_symlink(source)
@@ -168,11 +184,13 @@ def skills(ctx: click.Context, scope: str | None, force: bool, dry_run: bool) ->
 
 @add.command()
 @_scope_option
+@_tool_option
 @_force_option
 @_dry_run_option
 @click.pass_context
-def agents(ctx: click.Context, scope: str | None, force: bool, dry_run: bool) -> None:
+def agents(ctx: click.Context, scope: str | None, tool: str | None, force: bool, dry_run: bool) -> None:
     """Add agents to a project."""
+    ctx.obj["tool"] = tool or ctx.obj.get("tool")
     installer, source, force = _sub_opts(ctx, scope, force, dry_run)
     if installer._method == "symlink":
         installer.install_agents_symlink(source)
@@ -216,8 +234,9 @@ def update(scope: str | None, dry_run: bool) -> None:
 # ── uninstall ────────────────────────────────────────────────
 @main.command()
 @click.option("--scope", type=click.Choice(["user", "project"], case_sensitive=False), required=True, help="Scope to uninstall from.")
+@_tool_option
 @_dry_run_option
-def uninstall(scope: str, dry_run: bool) -> None:
+def uninstall(scope: str, tool: str | None, dry_run: bool) -> None:
     """Remove skills and agents from a scope."""
     config = Installer.find_install_config()
 
@@ -229,7 +248,7 @@ def uninstall(scope: str, dry_run: bool) -> None:
         if config.clone_path:
             installer.set_clone_path(Path(config.clone_path))
 
-    installer.set_scope(scope)
+    installer.set_scope(scope, tool or "claude")
     installer.uninstall()
 
 

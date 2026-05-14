@@ -100,6 +100,7 @@ class Installer:
         self.dry_run = dry_run
         self._data = _data_path()
         self._scope: str | None = None
+        self._tool: str = "claude"
         self._method: str = "copy"
         self._clone_path: Path | None = None
         self._branch: str | None = None
@@ -110,26 +111,53 @@ class Installer:
     # ── Banner ──────────────────────────────────────────────
     def banner(self) -> None:
         click.echo()
-        click.secho("┌──────────────────────────────────────────┐", fg="cyan", bold=True)
-        click.secho("│   dev-skills — Claude Code Installer      │", fg="cyan", bold=True)
-        click.secho("└──────────────────────────────────────────┘", fg="cyan", bold=True)
+        click.secho("┌──────────────────────────────────────────────────┐", fg="cyan", bold=True)
+        click.secho("│   dev-skills — Claude Code & OpenCode Installer   │", fg="cyan", bold=True)
+        click.secho("└──────────────────────────────────────────────────┘", fg="cyan", bold=True)
         click.echo()
 
     # ── Scope ───────────────────────────────────────────────
     def ask_scope(self) -> str:
+        tool = self._tool
+        if tool == "opencode":
+            user_path = "~/.config/opencode/"
+            project_path = ".opencode/"
+        else:
+            user_path = "~/.claude/"
+            project_path = ".claude/"
         click.echo("  Where do you want to install?")
-        click.echo("    1) User level    — ~/.claude/          (available in ALL projects)")
-        click.echo("    2) Project level — .claude/            (only in the CURRENT project)")
+        click.echo(f"    1) User level    — {user_path:<24} (available in ALL projects)")
+        click.echo(f"    2) Project level — {project_path:<24} (only in the CURRENT project)")
         click.echo()
         choice = click.prompt("  Choose", type=click.Choice(["1", "2"]))
         return "user" if choice == "1" else "project"
 
-    def set_scope(self, scope: str) -> None:
+    def ask_tool(self) -> str:
+        click.echo("  Which AI coding tool?")
+        click.echo("    1) Claude Code  — ~/.claude/")
+        click.echo("    2) OpenCode     — ~/.config/opencode/")
+        click.echo()
+        choice = click.prompt("  Choose", type=click.Choice(["1", "2"]))
+        tool = "claude" if choice == "1" else "opencode"
+        self._tool = tool
+        return tool
+
+    def set_tool(self, tool: str) -> None:
+        self._tool = tool
+
+    def set_scope(self, scope: str, tool: str = "claude") -> None:
         self._scope = scope
-        if scope == "user":
-            self._config_dir = Path.home() / ".claude"
+        self._tool = tool
+        if tool == "opencode":
+            if scope == "user":
+                self._config_dir = Path.home() / ".config" / "opencode"
+            else:
+                self._config_dir = Path.cwd() / ".opencode"
         else:
-            self._config_dir = Path.cwd() / ".claude"
+            if scope == "user":
+                self._config_dir = Path.home() / ".claude"
+            else:
+                self._config_dir = Path.cwd() / ".claude"
 
         self._skills_dest = self._config_dir / "skills"
         self._agents_dest = self._config_dir / "agents"
@@ -328,7 +356,15 @@ class Installer:
         """Show install plan."""
         method_label = "symlink (clone + link)" if self._method == "symlink" else "copy"
         if full:
-            label = "user (~/.claude/)" if self._scope == "user" else f"project ({Path.cwd()}/.claude/)"
+            tool = self._tool or "claude"
+            if tool == "opencode":
+                user_dir, project_dir = "~/.config/opencode/", ".opencode/"
+            else:
+                user_dir, project_dir = "~/.claude/", ".claude/"
+            if self._scope == "user":
+                label = f"user ({user_dir}) [{tool}]"
+            else:
+                label = f"project ({Path.cwd()}/{project_dir.rstrip('/')}) [{tool}]"
             _log_info(f"Scope        : {click.style(label, bold=True)}")
         _log_info(f"Method       : {click.style(method_label, bold=True)}")
         if self._clone_path:
@@ -358,6 +394,7 @@ class Installer:
         click.echo("  Next step — add skills to a project:")
         click.echo(f"    uvx dev-skills add --scope user")
         click.echo(f"    uvx dev-skills add skills --scope project")
+        click.echo(f"    uvx dev-skills add --scope user --tool opencode")
         click.echo()
 
     # ── Skills ──────────────────────────────────────────────
@@ -528,9 +565,23 @@ class Installer:
                 config_dir / "agents",
             )
 
+        click.secho("  OpenCode", bold=True)
+        click.echo()
+        for scope_name, config_dir in [
+            ("user", Path.home() / ".config" / "opencode"),
+            ("project", Path.cwd() / ".opencode"),
+        ]:
+            cls._status_block(
+                f"opencode/{scope_name}",
+                config_dir / "skills",
+                config_dir / "agents",
+            )
+
     # ── Done ────────────────────────────────────────────────
     def done(self) -> None:
-        self._done_banner("Installation complete.")
+        tool = self._tool or "claude"
+        self._done_banner(f"Installation complete ({tool}).")
+        click.echo(f"  Tool      : {click.style(tool, bold=True)}")
         click.echo(f"  Method    : {click.style(self._method, bold=True)}")
         if self._clone_path:
             click.echo(f"  Source    : {self._clone_path}")
