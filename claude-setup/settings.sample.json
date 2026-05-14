@@ -1,0 +1,6 @@
+{
+  "env": {
+    "VAULT_FOLDER": "/path/to/your/obsidian-vault",
+    "PROJECTS_FOLDER": "/path/to/your/projects"
+  }
+}
