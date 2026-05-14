@@ -19,7 +19,7 @@ Personal Claude Code skills collection — Obsidian integration and dev utilitie
 
 ```bash
 # Install CLI + clone repo (one time)
-uvx --from "git+https://github.com/jnarvaezp/dev-skills.git@main" dev-skills install
+uvx --from "git+https://github.com/jeferson-narvaez-dev-ai/dev-skills.git@main" dev-skills install
 
 # Add skills to Claude Code (user level)
 uvx dev-skills add --scope user

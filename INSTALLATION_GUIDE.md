@@ -24,7 +24,7 @@ A template is available at `claude-setup/settings.sample.json`.
 ## 2. Install CLI and clone the repo (one-time setup)
 
 ```bash
-uvx --from "git+https://github.com/jnarvaezp/dev-skills.git@main" dev-skills install
+uvx --from "git+https://github.com/jeferson-narvaez-dev-ai/dev-skills.git@main" dev-skills install
 ```
 
 This will:

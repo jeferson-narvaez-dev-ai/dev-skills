@@ -14,7 +14,7 @@ from pathlib import Path
 import click
 
 # ── Constants ────────────────────────────────────────────────
-GIT_REPO_URL = "https://github.com/jnarvaezp/dev-skills.git"
+GIT_REPO_URL = "https://github.com/jeferson-narvaez-dev-ai/dev-skills.git"
 CONFIG_DIR = Path.home() / ".cache" / "dev-skills"
 CONFIG_FILE = CONFIG_DIR / "install.json"
 CACHE_DIR = CONFIG_DIR / "repo"
